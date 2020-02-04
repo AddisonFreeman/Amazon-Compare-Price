@@ -1,0 +1,44 @@
+{
+   "background": {
+      "persistent": false,
+      "scripts": [ "lib/jquery.js", "background.js" ]
+   },
+   "content_scripts": [ {
+      "css": [ "css/style.css","css/normalize.css","css/polypoly-export.webflow.css","css/webflow.css" ],
+      "js": [ "lib/jquery.js", "lib/mustache.js", "lib/globalize.js", "lib/globalize.cultures.js", "content.js" ],
+      "matches": [ "http://www.amazon.com/*", "https://www.amazon.com/*",
+                   "http://www.amazon.ca/*", "https://www.amazon.ca/*", 
+                   "http://www.amazon.com.mx/*", "https://www.amazon.com.mx/*", 
+                   "http://www.amazon.co.uk/*", "https://www.amazon.co.uk/*", 
+                   "http://www.amazon.com.au/*", "https://www.amazon.com.au/*", 
+                   "http://www.amazon.in/*", "https://www.amazon.in/*", 
+                   "http://www.amazon.de/*", "https://www.amazon.de/*", 
+                   "http://www.amazon.fr/*", "https://www.amazon.fr/*", 
+                   "http://www.amazon.es/*", "https://www.amazon.es/*", 
+                   "http://www.amazon.it/*", "https://www.amazon.it/*", 
+                   "http://www.amazon.com.br/*", "https://www.amazon.com.br/*", 
+                   "http://www.amazon.co.jp/*", "https://www.amazon.co.jp/*", 
+                   "http://www.amazon.com.tr/*", "https://www.amazon.com.tr/*", 
+                   "http://www.amazon.cn/*", "https://www.amazon.cn/*", 
+                   "http://www.amazon.sg/*", "https://www.amazon.sg/*", 
+                   "http://www.amazon.ae/*", "https://www.amazon.ae/*",
+                   "https://www.ecb.int/stats/eurofxref/*", "https://www.ecb.europa.eu/stats/eurofxref/*" ]
+   } ],
+   "description": "Compare amazon prices",
+   "homepage_url": "https://addisonfreeman.com",
+   "browser_action": {
+      "default_title": "Amazon Compare"
+   },
+   "icons": {
+      "128": "icons/icon.png",
+      "16": "icons/icon.png",
+      "48": "icons/icon.png"
+   },
+   "permissions": [ "geolocation" ],
+   "manifest_version": 2,
+   "name": "amazon prices",
+   "short_name": "amz price",
+   "update_url": "https://clients2.google.com/service/update2/crx",
+   "version": "1.2.0",
+   "web_accessible_resources": [ "images/icon.png", "images/loader.gif", "images/placeholder.png", "images/return.png", "css/style.css", "lib/jquery.js", "tooltip.html" ]
+}
