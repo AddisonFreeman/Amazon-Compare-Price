@@ -493,22 +493,111 @@ var page = {
         // var $imageMarkup = $('<img id="compare-icon" src="' + settings.image('icon.png') + '" alt="Hover to see the prices of the other stores" />');
         var usedPrice = tooltip.findNewUsedPrice();
         var listPrice = tooltip.findListedPrice();
-
+        var label = "";
         if(usedPrice !== null) {
             usedPrice = usedPrice.html();
+            label = usedPrice;
             console.log(usedPrice);
+
+            var link = tooltip.findNewUsedPrice()[0].parentNode.href;
+            chrome.runtime.sendMessage({ query: "checkUsedPrice", url: link },
+                // parse response
+            function (response) {
+                if (response.success) {
+                    // console.log(response);
+
+
+                    // $(response.body).find(".olpOfferPrice").each((idx, el) => {
+                    //     if(el.innerText.trim().includes(usedPrice)) {
+                    //         var addToCartForm = $(el).parent().siblings(".olpBuyColumn").find("form");
+                    //         console.log(addToCartForm);
+                    //         $("#amz_cmp_add_item").click(() => {
+                    //             // $(document.body).append(addToCartForm);
+                    //             console.log(response.html);
+                    //             console.log(response.pageTitle);
+                    //             //direct to 
+                                
+                    //             // addToCartForm.submit();
+                                
+
+                    //             // var submitBtn = $(addToCartForm).find("input[name='submit.addToCart']");
+                    //             // console.log(submitBtn);
+                    //             // submitBtn.click();
+                    //         });
+                    //         var taxEl = $(el).siblings('.olpShippingInfo').find(".olpEstimatedTaxText").html().trim();
+                    //         var tax = taxEl.slice(taxEl.indexOf("+ ")+2,taxEl.indexOf(" e"));
+                    //         $(".best_shipping").html(tax);
+                            
+                    //         var bestUsedNum = dollarToNumber(bestUsed);
+                    //         var taxNum = dollarToNumber(tax);
+                    //         var usedTotal = bestUsedNum+taxNum;
+                    //         //this should subtract the tax (wherever that is)
+                    //         var amzPrice = dollarToNumber(convertedPrice);
+                    //         var difference = (Math.round((amzPrice - usedTotal) * 100) / 100).toFixed(2);
+
+                    //         $(".best_total").html("$"+usedTotal);
+                    //         $(".best_save").html("save $"+difference);
+                    //     }
+                    // });
+
+                    // $(response.body).find(".olpEstimatedTaxText").each((idx, el) => {
+                    //     var tax = el.innerText.trim();
+                    //     tax = tax.slice(tax.indexOf("+ ")+2,tax.indexOf(" e"));
+                    //     console.log(tax);
+                    // });
+                    
+                    
+                    // var regex = /[nb]\s*?id="priceblock_[\w]*?price".*?>(.*?)</img;
+                    // var cursorPrice = regex.exec(response.body);
+                    // // console.log(cursorPrice);
+                    // var price = null;
+                    // while (cursorPrice != null) {
+                    //     price = cursorPrice;
+                    //     cursorPrice = regex.exec(response.body);
+                    // }
+                    // if (price != null && price.length == 2) {
+                    //     // console.log('before display price');
+                    //     displayPrice(price[1]);
+                    //     // console.log(response.body);
+                    //     var parser = new DOMParser();
+                    //     var htmlDoc = parser.parseFromString(response.body, 'text/html');
+                    //     var deliveryErr = htmlDoc.querySelectorAll('#dynamicDeliveryMessage .a-color-error');
+                        
+                    //     // console.log(deliveryErr);
+                    //     if(deliveryErr.length === 0) {
+                    //         var $shopInfo = $('#compare-shop-' + shop.id);
+                    //         var compareContainer = $shopInfo.parent().find('.compare-link');
+                    //         if(compareContainer.find('span').length === 0)
+                    //             compareContainer.append("<span title=\"Ships to your location\" class=\"airIcon\"> ✈️ </span>");
+                    //     }
+                        
+                    //     return;
+                    // }
+                    // displayWarning(pageScraper.warning.unavailable, false);
+                } else {
+                    if (response.status == 404) {
+                        // displayWarning(pageScraper.warning.notFound, true);
+                    } else {
+                        // displayWarning(pageScraper.warning.networkError, false);
+                    }
+                }
+
+            });
+
+
+
             if(listPrice !== null) {
                 console.log(listPrice[0].innerHTML);
                 listPrice = listPrice[0].innerHTML;
                 listPrice = Number(listPrice.slice(1,listPrice.length).replace(",","").replace("$","").replace(".","").replace("TL","").replace("ED",""));
-                usedPrice = Number(usedPrice.slice(1,listPrice.length).replace(",","").replace("$","").replace(".","").replace("TL","").replace("ED",""));
+                var cmpUsedPrice = Number(usedPrice.slice(1,listPrice.length).replace(",","").replace("$","").replace(".","").replace("TL","").replace("ED",""));
 
-                if(listPrice < usedPrice) {
-                    usedPrice = "Best Price";
+                if(listPrice < cmpUsedPrice) {
+                    label = "Best Price";
                 }
             }
         } else {
-            usedPrice = "New Only";
+            label = "New Only";
         }
         
 
@@ -518,7 +607,7 @@ var page = {
 
         
         // var usedPrice = $('#olp-upd-new-used .a-color-price').html();
-        var $imageMarkup = $('<div id="compare-container"> <div id="compare-icon"><button>'+usedPrice+'</button></div><div id="compare-region"><div id="temp-compare" class="hidden">Calculating...</div><button class="pending-price-scan">Calculating...</button></div></div>');
+        var $imageMarkup = $('<div id="compare-container"> <div id="compare-icon"><button>'+label+'</button></div><div id="compare-region"><div id="temp-compare" class="hidden">Calculating...</div><button class="pending-price-scan">Calculating...</button></div></div>');
         var $container = this.findAppropriateTooltipContainer();
         // var $container = $('#price').parent();
         $container.append($imageMarkup);
