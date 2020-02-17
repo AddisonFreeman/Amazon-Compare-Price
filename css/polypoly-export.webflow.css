@@ -1,4 +1,55 @@
+.flag-icon {
+  margin-right: 5px;
+}
 
+.amz-select ul li.amz-option {
+    background-color: transparent;
+    font-size: 14px;
+    /*box-shadow: 0px 1px 0 #DEDEDE, 0px -1px 0 #DEDEDE;*/
+    /*-webkit-box-shadow: 0px 1px 0 #DEDEDE, 0px -1px 0 #DEDEDE;*/
+    /*-moz-box-shadow: 0px 1px 0 #DEDEDE, 0px -1px 0 #DEDEDE;*/
+}
+
+.amz-select ul li.amz-option:hover {
+    background-color: transparent;
+}
+
+.amz-select ul li.amz-option {
+    z-index:1;
+    font-weight: 500;
+    padding:5px;
+    display:none;
+}
+
+.amz-select ul li:first-child {
+    display:block;
+}
+
+.amz-select ul li {
+    cursor:default;
+}
+
+.amz-select ul#currency-select.expanded li{
+    display: block !important;
+}
+
+.amz-select ul {
+    list-style: none;
+}
+
+.amz-select {
+    position: absolute;
+    bottom: 5px;
+    left: 13px;
+    z-index: 999999999999999;
+    width: 220px;
+}
+
+.rarr:after, .darr:after {
+    content: ' ▼ ';
+    float:left;
+    padding:0 5px;
+}
 
 
 h1.heading {

@@ -4,7 +4,7 @@
       "scripts": [ "lib/jquery.js", "background.js" ]
    },
    "content_scripts": [ {
-      "css": [ "css/style.css","css/normalize.css","css/polypoly-export.webflow.css","css/webflow.css" ],
+      "css": [ "css/style.css","css/normalize.css","css/polypoly-export.webflow.css","css/webflow.css","css/flag-icon.min.css" ],
       "js": [ "lib/jquery.js", "lib/mustache.js", "lib/globalize.js", "lib/globalize.cultures.js", "content.js" ],
       "matches": [ "http://www.amazon.com/*", "https://www.amazon.com/*",
                    "http://www.amazon.ca/*", "https://www.amazon.ca/*", 
@@ -34,11 +34,11 @@
       "16": "icons/icon.png",
       "48": "icons/icon.png"
    },
-   "permissions": [ "geolocation" ],
+   "permissions": [],
    "manifest_version": 2,
    "name": "amazon prices",
    "short_name": "amz price",
    "update_url": "https://clients2.google.com/service/update2/crx",
-   "version": "1.2.0",
-   "web_accessible_resources": [ "images/icon.png", "images/loader.gif", "images/placeholder.png", "images/return.png", "css/style.css", "lib/jquery.js", "tooltip.html" ]
+   "version": "1.3.0",
+   "web_accessible_resources": [ "images/icon.png", "images/loader.gif", "images/placeholder.png", "images/return.png", "css/style.css", "lib/jquery.js", "tooltip.html","flags/*" ]
 }

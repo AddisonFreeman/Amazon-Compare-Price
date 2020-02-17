@@ -37,10 +37,10 @@ function pullDesiredCurrency() {
         //When the page is loaded and ready
         $(document).ready(() => {
             //Event listener to handle which used option is selected
-            $(".div-block").click((el) => {
-                $(".div-block").removeClass("selected"); //remove from all
-                $(el).addClass("selected"); //add to current
-            });
+            // $(".div-block").click((el) => {
+            //     $(".div-block").removeClass("selected"); //remove from all
+            //     $(el).addClass("selected"); //add to current
+            // });
             //fallback for timed out message response
             setTimeout(() => {
                 var desiredCurrency = localStorage.getItem("desiredCurrency");
@@ -48,20 +48,55 @@ function pullDesiredCurrency() {
                 Object.keys(currencies).forEach((item) => {
                     //set the currently desired currency as the default
                     if(currencies[item] === desiredCurrency) {
-                        $('#currency-select').append(`<option selected value="${currencies[item]}">${item}</option>`)
+                        console.log(currencies[item]);
+                        $('#currency-select').prepend(`<li class="amz-option" value="${currencies[item]}"><span class="flag-icon flag-icon-${currencies[item].toLowerCase().slice(0, -1)}"></span> ${item}</li>`)
                     } else {
                         //all other currencies
-                        $('#currency-select').append(`<option value="${currencies[item]}">${item}</option>`)
+                        $('#currency-select').append(`<li class="amz-option" value="${currencies[item]}"><span class="flag-icon flag-icon-${currencies[item].toLowerCase().slice(0, -1)}"></span> ${item}</li>`)
                     }
                 });
+                
                 //if the desired currency changes, set that value in localStorage
-                document.getElementById("currency-select").addEventListener('change', function() {
-                  let currency = this.value;
-                  setDesiredCurrency(currency);
-                  this.desiredCurrency = currency;
-                  this.desiredCulture = currencyCultureMap[currency];
-                  //reload the page to update the price calculations
-                  location.reload();
+
+                $('ul#currency-select').click(function() {
+                    if($(this).hasClass("expanded")) {
+                        $(this).removeClass("expanded").addClass("collapsed");
+                        $(this).css({"background-image":"url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');"});
+                    } else {
+                        $(this).removeClass("collapsed").addClass("expanded");
+                        $(this).css({"background-image":"none"});
+                    }
+                });
+
+                $('.amz-select ul li.amz-option').click(function() {
+
+                    //if index is zero this is an opening action 
+                        var idx = $("li.amz-option").index(this);
+                        console.log(idx);
+
+                        if(idx === 0) {
+                            return;
+                        }
+                        // $(this).siblings().children().remove();
+                        // if($(this).parent().hasClass("expanded")) {
+                        //     $(this).parent().removeClass("expanded").addClass("collapsed");
+                        // } else {
+                        //     $(this).parent().removeClass("collapsed").addClass("expanded");
+                        // }
+
+                        
+                        $(this).parent().css({"background-image":"url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');"});
+                        let currency = $(this).attr("value");
+                        $(this).parent().prepend(this);
+                        // console.log(currency);
+                        setDesiredCurrency(currency);
+                        this.desiredCurrency = currency;
+                        this.desiredCulture = currencyCultureMap[currency];
+                        //reload the page to update the price calculations
+                        location.reload();      
+                        // var a= $(this).siblings()
+                        // console.log( $(a).is(":visible"));
+                        // $(this).siblings().append('<img src="https://cdn4.iconfinder.com/data/icons/6x16-free-application-icons/16/Delete.png" style="float:right; width:12px; height:12px;">');
                 });
             }, 200);
 
@@ -120,9 +155,9 @@ let currencies = {
     'Brazilian Real': 'BRL',
     'Japanese Yen': 'JPY',
     'Turkish Lira': 'TRY',
-    'Chinese Yuan (Renminbi)': 'CNY',
+    'Chinese Yuan': 'CNY',
     'Singapore Dollar':'SGD',
-    'United Arab Emirates Dirham':'AED'
+    'United Arab Emirates':'AED'
 };
 //map to connect currency to cultures
 let currencyCultureMap = {
@@ -255,9 +290,9 @@ var Settings = function (asin) {
            if(window.location.host === "www."+shop.title) {
             this.desiredCurrency = shop.currency;
             this.desiredCulture = shop.culture;
-            setTimeout(() => {
-                document.getElementById('currency-select').value=shop.currency;
-            }, 1000);
+            // setTimeout(() => {
+            //     document.getElementById('currency-select').value=shop.currency;
+            // }, 1000);
             setDesiredCurrency(shop.currency);
             localStorage['desiredCurrency'] = shop.currency;
             location.reload();
@@ -428,16 +463,17 @@ var tooltip = {
     },
     _genericRegisterShowHideHandlers: function ($selector, isOn) {
         $selector
-            .mouseenter(function () {
+        .mouseenter(function () {
             $('.compare-tooltip').show();
             $('.price-tooltip').hide();
             isOn(true);
         })
-            .mouseleave(function () {
+        .mouseleave(function () {
             isOn(false);
             setTimeout(function () {
                 if (!tooltip._mouseIsOnIcon && !tooltip._mouseIsOnTooltip)
                     $('.compare-tooltip').hide();
+                    $('.amz-select ul#currency-select').removeClass("expanded").addClass("collapsed");
             }, 100);
         });
     },
@@ -448,7 +484,7 @@ var tooltip = {
             $('.compare-tooltip').hide();
             isOn(true);
         })
-            .mouseleave(function () {
+        .mouseleave(function () {
             isOn(false);
             setTimeout(function () {
                 if (!tooltip._mouseIsOnIcon && !tooltip._mouseIsOnTooltip)
