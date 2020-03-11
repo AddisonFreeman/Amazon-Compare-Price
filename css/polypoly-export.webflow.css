@@ -64,7 +64,7 @@ h1.heading {
   border-radius: 5px;
 }
 
-.selected {
+.selectable:hover {
   background: #F4FCF6
 }
 
@@ -91,10 +91,10 @@ h1.heading {
   }
   .div-block-2 {
     margin-top: 26px;
-    border-top-color: #5db75c;
+    border-top-color: #00aaaa;
     border-bottom-width: 3px;
-    border-bottom-color: #5db75c;
-    color: #5db75c;
+    border-bottom-color: #00aaaa;
+    color: #00aaaa;
   }
   .text-block {
     font-family: Ubuntu, Helvetica, sans-serif;

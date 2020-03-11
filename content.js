@@ -21,7 +21,7 @@ var queryString = function (name) {
 function setDesiredCurrency(currency) {
     //sendMessage to background script
     chrome.runtime.sendMessage({ query: "setDesiredCurrency", data: currency } , function (response) {
-        console.log(response.currency);
+        // console.log(response.currency);
         //also load in content script for temporary caching
         localStorage['desiredCurrency'] = response.currency;
     });
@@ -37,10 +37,6 @@ function pullDesiredCurrency() {
         //When the page is loaded and ready
         $(document).ready(() => {
             //Event listener to handle which used option is selected
-            // $(".div-block").click((el) => {
-            //     $(".div-block").removeClass("selected"); //remove from all
-            //     $(el).addClass("selected"); //add to current
-            // });
             //fallback for timed out message response
             setTimeout(() => {
                 var desiredCurrency = localStorage.getItem("desiredCurrency");
@@ -48,16 +44,14 @@ function pullDesiredCurrency() {
                 Object.keys(currencies).forEach((item) => {
                     //set the currently desired currency as the default
                     if(currencies[item] === desiredCurrency) {
-                        console.log(currencies[item]);
+                        // console.log(currencies[item]);
                         $('#currency-select').prepend(`<li class="amz-option" value="${currencies[item]}"><span class="flag-icon flag-icon-${currencies[item].toLowerCase().slice(0, -1)}"></span> ${item}</li>`)
                     } else {
                         //all other currencies
                         $('#currency-select').append(`<li class="amz-option" value="${currencies[item]}"><span class="flag-icon flag-icon-${currencies[item].toLowerCase().slice(0, -1)}"></span> ${item}</li>`)
                     }
                 });
-                
                 //if the desired currency changes, set that value in localStorage
-
                 $('ul#currency-select').click(function() {
                     if($(this).hasClass("expanded")) {
                         $(this).removeClass("expanded").addClass("collapsed");
@@ -69,34 +63,18 @@ function pullDesiredCurrency() {
                 });
 
                 $('.amz-select ul li.amz-option').click(function() {
-
                     //if index is zero this is an opening action 
                         var idx = $("li.amz-option").index(this);
-                        console.log(idx);
-
                         if(idx === 0) {
                             return;
                         }
-                        // $(this).siblings().children().remove();
-                        // if($(this).parent().hasClass("expanded")) {
-                        //     $(this).parent().removeClass("expanded").addClass("collapsed");
-                        // } else {
-                        //     $(this).parent().removeClass("collapsed").addClass("expanded");
-                        // }
-
-                        
                         $(this).parent().css({"background-image":"url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23007CB2%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E');"});
                         let currency = $(this).attr("value");
                         $(this).parent().prepend(this);
-                        // console.log(currency);
                         setDesiredCurrency(currency);
                         this.desiredCurrency = currency;
                         this.desiredCulture = currencyCultureMap[currency];
-                        //reload the page to update the price calculations
                         location.reload();      
-                        // var a= $(this).siblings()
-                        // console.log( $(a).is(":visible"));
-                        // $(this).siblings().append('<img src="https://cdn4.iconfinder.com/data/icons/6x16-free-application-icons/16/Delete.png" style="float:right; width:12px; height:12px;">');
                 });
             }, 200);
 
@@ -152,6 +130,8 @@ let currencies = {
     'Mexican Peso': 'MXN',
     'British Pound': 'GBP',
     'Australian Dollar': 'AUD',
+    'Indian Rupee': 'INR',
+    'South Korean Won': 'KRW',
     'Brazilian Real': 'BRL',
     'Japanese Yen': 'JPY',
     'Turkish Lira': 'TRY',
@@ -167,6 +147,8 @@ let currencyCultureMap = {
     'MXN': 'es-MX',
     'GBP': 'en-GB',
     'AUD': 'en-AU',
+    'INR': 'hi-IN',
+    'KRW': 'ko-KR',
     'BRL': 'pt-BR',
     'JPY': 'ja-JP',
     'TRY': 'tr-TR',
@@ -258,9 +240,20 @@ var Shop = function (id, title, domain, base_url, currency, culture) {
 function dollarToNumber(dollarAmt) {
     return Number(dollarAmt.slice(1,dollarAmt.length));
 }
+
+function getBestPriceLink(bestPrice) {
+    var priceList = document.querySelectorAll(".compare-price");
+    for (let i = 0; i < priceList.length; i++) {
+      if(priceList[i].textContent === bestPrice) {
+          var bestLink = $(priceList[i]).siblings('a.compare-link').attr('href');
+          return bestLink;
+      }
+    }
+}
 //global Settings object with culture map connecting store urls to locales
 var Settings = function (asin) {
     this.asin = asin;
+    //all shops to scrape from
     this.shops = [
         new Shop(1, 'amazon.com', 'www.amazon.com', 'https://www.amazon.com/dp/{asin}?', 'USD', 'en-US'),
         new Shop(2, 'amazon.ca', 'www.amazon.ca', 'https://www.amazon.ca/dp/{asin}?', 'CAD', 'en-CA'),
@@ -348,21 +341,19 @@ var Settings = function (asin) {
                         minPrice = "999999999999";
                     }
                     //parse into Number format for comparision
-                    var compareCurrentPrice = Number(convertedPrice.slice(1,convertedPrice.length).replace(",","").replace("$","").replace(".","").replace("TL","").replace("ED",""));
-                    var compareMinPrice = Number(minPrice.slice(1,minPrice.length).replace(",","").replace("$","").replace(".","").replace("TL","").replace("ED",""));
+                    var compareCurrentPrice = Number(convertedPrice.slice(1,convertedPrice.length).replace(",","").replace("$","").replace(".","").replace("TL","").replace("ED","").replace("₩","").replace("¥",""));
+                    var compareMinPrice = Number(minPrice.slice(1,minPrice.length).replace(",","").replace("$","").replace(".","").replace("TL","").replace("ED","").replace("₩","").replace("¥",""));
                     //get desired locale to format appropriate monetary sign
                     var desiredCurrency = localStorage.getItem("desiredCurrency");
-                    // console.log(compareCurrentPrice);
-                    // console.log(compareMinPrice);
-                    // console.log(' ');
+
                     if(compareCurrentPrice < compareMinPrice) {
                         //display value in compare box as iterated over
                         $('#temp-compare')[0].innerText = convertedPrice;
                         //show best region if comparing current site
-                        if(host == shop.title) {
-                            if(convertedPrice < minPrice)
-                                $('#compare-region button')[0].innerText = "Best Region";
+                        if(host === shop.title && compareCurrentPrice < compareMinPrice) {
+                            $('#compare-region button')[0].innerText = "Best Region";
                         } else {
+                            // getBestPriceLink(convertedPrice)
                             //format with dollar sign for these locals
                             if(desiredCurrency === 'USD' || 
                                desiredCurrency === 'CAD' || 
@@ -372,9 +363,13 @@ var Settings = function (asin) {
                               ) {
                                 //Clarify currency with region
                                 $('#compare-region button')[0].innerHTML = convertedPrice+'<span class="smallCurrency">('+desiredCurrency+')</span>';
+                                //put link in region button later, set data attribute now
+                                $('#compare-region button')[0].dataset.pricelink = getBestPriceLink(convertedPrice);
                             } else {
                                 //Show regular price
                                 $('#compare-region button')[0].innerHTML = convertedPrice;
+                                //put link in region button later, set data attribute now
+                                $('#compare-region button')[0].dataset.pricelink = getBestPriceLink(convertedPrice);
                             }
                         }
                     }
@@ -392,6 +387,29 @@ var Settings = function (asin) {
                     //add class to make button background green on completed crawl
                     $('#compare-region button').removeClass("pending-price-scan");
                     $('#compare-region button').addClass("completed-price-scan");
+                    setTimeout(() => {
+                        var bestPrice = $('#compare-region button').innerText;
+                        // bestPrice = bestPrice.substring(0, bestPrice.indexOf('<span'));
+                        // console.log(bestPrice);
+                        $('.completed-price-scan').on('click',(e) => {
+                            //best-region button will open the best region page in a new tab if available
+                            if(e.target.tagname === "SPAN") {
+                                if(e.target.parentNode.innerText !== "Best Region") {        
+                                    e.target.parentNode.style['pointer-events'] = "auto";
+                                    window.open($(e.target).parent().data('pricelink'),'_blank');    
+                                } else {
+                                    e.target.parentNode.style['pointer-events'] = "none";
+                                }
+                            } else {
+                                if(e.target.innerText !== "Best Region") {        
+                                    e.target.style['pointer-events'] = "auto";
+                                    window.open($(e.target).data('pricelink'),'_blank');
+                                } else {
+                                    e.target.style['pointer-events'] = "none";
+                                }
+                            }
+                        });
+                    }, 500);
                 } 
             },0);
         }, 500);
@@ -399,6 +417,7 @@ var Settings = function (asin) {
 };
 
 var pageScraper = {
+    //object for scraping other pages
     warning: {
         networkError: 'Network error',
         unavailable: 'Unavailable',
@@ -409,35 +428,30 @@ var pageScraper = {
     getPriceOn: function (shop, displayPrice, displayWarning) {
         //strip &ref from URLs
         shop.url = shop.url.replace("&psc=1","");
-        chrome.runtime.sendMessage({ query: "checkPrice", url: shop.url }, //pass metadata and reconstruct the url in background.js, as per Google's recommendation
+        //pass metadata and reconstruct the url in background.js, as per Google's recommendation
+        chrome.runtime.sendMessage({ query: "checkPrice", url: shop.url }, 
         function (response) {
             if (response.success) {
-                //TODO check response for shipping error, put airplane icon if not there > $('#dynamicDeliveryMessage .a-color-error') 
-
                 var regex = /[nb]\s*?id="priceblock_[\w]*?price".*?>(.*?)</img;
                 var cursorPrice = regex.exec(response.body);
-                // console.log(cursorPrice);
                 var price = null;
                 while (cursorPrice != null) {
                     price = cursorPrice;
                     cursorPrice = regex.exec(response.body);
                 }
                 if (price != null && price.length == 2) {
-                    // console.log('before display price');
                     displayPrice(price[1]);
-                    // console.log(response.body);
                     var parser = new DOMParser();
                     var htmlDoc = parser.parseFromString(response.body, 'text/html');
                     var deliveryErr = htmlDoc.querySelectorAll('#dynamicDeliveryMessage .a-color-error');
                     
-                    // console.log(deliveryErr);
                     if(deliveryErr.length === 0) {
                         var $shopInfo = $('#compare-shop-' + shop.id);
                         var compareContainer = $shopInfo.parent().find('.compare-link');
+                        //add airplane icon iff no shipping errors
                         if(compareContainer.find('span').length === 0)
                             compareContainer.append("<span title=\"Ships to your location\" class=\"airIcon\"> ✈️ </span>");
                     }
-                    
                     return;
                 }
                 displayWarning(pageScraper.warning.unavailable, false);
@@ -522,6 +536,10 @@ var tooltip = {
     }
 };
 
+function formatPriceToNumber(priceString) {
+    return Number(priceString.slice(1,priceString.length).replace(",","").replace("$","").replace(".","").replace("TL","").replace("ED",""));
+}
+
 var page = {
     addTooltipToPage: function (tooltipMarkup) {
         var $placeholderMarkup = $('<img id="compare-placeholder" src="' + settings.image('placeholder.png') + '" alt="Placeholder" />');
@@ -530,86 +548,62 @@ var page = {
         var usedPrice = tooltip.findNewUsedPrice();
         var listPrice = tooltip.findListedPrice();
         var label = "";
-        if(usedPrice !== null) {
-            usedPrice = usedPrice.html();
-            label = usedPrice;
-            console.log(usedPrice);
 
-            var link = tooltip.findNewUsedPrice()[0].parentNode.href;
+        if(usedPrice !== null && listPrice !== null) {
+            usedPrice = usedPrice.html();
+            listPrice = listPrice.html();
+            label = usedPrice;
+            // console.log(listPrice);
+
+            var link = tooltip.findNewUsedPrice()[0].previousElementSibling;
+            if(link !== null) {
+                link = link.href;
+            } else {
+                link = tooltip.findNewUsedPrice()[0].parentNode.href;
+            }
             chrome.runtime.sendMessage({ query: "checkUsedPrice", url: link },
                 // parse response
             function (response) {
                 if (response.success) {
-                    // console.log(response);
+                    //parse all used prices and first cheapest new price
+                    var firstNew = $(response.body).find(".olpCondition").filter(function() {
+                        return $(this).text().trim() === "New";
+                    }); 
+                    // get condition of new price (to support other conditions in the future)
+                    var condition = firstNew[0].innerText.trim();
+                    //set condition in tooltip
+                    $(".amz_condition").text(condition);
+                    var bestNewPrice = $(firstNew[0]).parent().parent().siblings(".olpPriceColumn").find(".olpOfferPrice");
+                    var isPrime = $(bestNewPrice).find(".a-icon-prime").length > 0;
+                    if(isPrime) {
+                        $(".best_arrive").html("Includes PRIME Shipping");
+                    }
+                    var bestNewPriceFormatted = bestNewPrice[0].innerText.trim();
+                    // set price total in popup
+                    $(".amz_total").html(listPrice);
+                    $(".amz_price").html(listPrice);
+                    $(".best_price").html(bestNewPriceFormatted);
+                    $(".best_total").html(bestNewPriceFormatted);
+                    $("#compare-icon button").html(bestNewPriceFormatted);
+                    // var bestUsedNum = dollarToNumber(usedPrice);
+                    // var usedTotal = bestUsedNum;
+                    // var amzPrice = dollarToNumber(listPrice);
+                    //set price difference in popup
 
-
-                    // $(response.body).find(".olpOfferPrice").each((idx, el) => {
-                    //     if(el.innerText.trim().includes(usedPrice)) {
-                    //         var addToCartForm = $(el).parent().siblings(".olpBuyColumn").find("form");
-                    //         console.log(addToCartForm);
-                    //         $("#amz_cmp_add_item").click(() => {
-                    //             // $(document.body).append(addToCartForm);
-                    //             console.log(response.html);
-                    //             console.log(response.pageTitle);
-                    //             //direct to 
-                                
-                    //             // addToCartForm.submit();
-                                
-
-                    //             // var submitBtn = $(addToCartForm).find("input[name='submit.addToCart']");
-                    //             // console.log(submitBtn);
-                    //             // submitBtn.click();
-                    //         });
-                    //         var taxEl = $(el).siblings('.olpShippingInfo').find(".olpEstimatedTaxText").html().trim();
-                    //         var tax = taxEl.slice(taxEl.indexOf("+ ")+2,taxEl.indexOf(" e"));
-                    //         $(".best_shipping").html(tax);
-                            
-                    //         var bestUsedNum = dollarToNumber(bestUsed);
-                    //         var taxNum = dollarToNumber(tax);
-                    //         var usedTotal = bestUsedNum+taxNum;
-                    //         //this should subtract the tax (wherever that is)
-                    //         var amzPrice = dollarToNumber(convertedPrice);
-                    //         var difference = (Math.round((amzPrice - usedTotal) * 100) / 100).toFixed(2);
-
-                    //         $(".best_total").html("$"+usedTotal);
-                    //         $(".best_save").html("save $"+difference);
-                    //     }
-                    // });
-
-                    // $(response.body).find(".olpEstimatedTaxText").each((idx, el) => {
-                    //     var tax = el.innerText.trim();
-                    //     tax = tax.slice(tax.indexOf("+ ")+2,tax.indexOf(" e"));
-                    //     console.log(tax);
-                    // });
+                    var numberListPrice = formatPriceToNumber(listPrice);
+                    var numberUsedPrice = formatPriceToNumber(bestNewPriceFormatted);
+                    var difference = (Math.round((numberListPrice - numberUsedPrice)) / 100).toFixed(2);
+                    console.log(numberListPrice);
+                    console.log(numberUsedPrice);
+                    console.log(difference);
+                    //set other totals
                     
+                    // $(".best_price").html(usedPrice);
                     
-                    // var regex = /[nb]\s*?id="priceblock_[\w]*?price".*?>(.*?)</img;
-                    // var cursorPrice = regex.exec(response.body);
-                    // // console.log(cursorPrice);
-                    // var price = null;
-                    // while (cursorPrice != null) {
-                    //     price = cursorPrice;
-                    //     cursorPrice = regex.exec(response.body);
-                    // }
-                    // if (price != null && price.length == 2) {
-                    //     // console.log('before display price');
-                    //     displayPrice(price[1]);
-                    //     // console.log(response.body);
-                    //     var parser = new DOMParser();
-                    //     var htmlDoc = parser.parseFromString(response.body, 'text/html');
-                    //     var deliveryErr = htmlDoc.querySelectorAll('#dynamicDeliveryMessage .a-color-error');
-                        
-                    //     // console.log(deliveryErr);
-                    //     if(deliveryErr.length === 0) {
-                    //         var $shopInfo = $('#compare-shop-' + shop.id);
-                    //         var compareContainer = $shopInfo.parent().find('.compare-link');
-                    //         if(compareContainer.find('span').length === 0)
-                    //             compareContainer.append("<span title=\"Ships to your location\" class=\"airIcon\"> ✈️ </span>");
-                    //     }
-                        
-                    //     return;
-                    // }
-                    // displayWarning(pageScraper.warning.unavailable, false);
+    
+                    // https://www.amazon.com/gp/aws/cart/add.html?ASIN.1=B072HS2CJN&Quantity.1=1
+                    $(".best_save_link").attr("href","https://"+settings.currentShop.domain+"/gp/aws/cart/add.html?ASIN.1="+compare.asin+"&Quantity.1="+$("#quantity")[0].value);
+                    $(".best_save").html("save $"+difference);
                 } else {
                     if (response.status == 404) {
                         // displayWarning(pageScraper.warning.notFound, true);
@@ -617,35 +611,29 @@ var page = {
                         // displayWarning(pageScraper.warning.networkError, false);
                     }
                 }
-
             });
-
-
-
             if(listPrice !== null) {
-                console.log(listPrice[0].innerHTML);
-                listPrice = listPrice[0].innerHTML;
-                listPrice = Number(listPrice.slice(1,listPrice.length).replace(",","").replace("$","").replace(".","").replace("TL","").replace("ED",""));
-                var cmpUsedPrice = Number(usedPrice.slice(1,listPrice.length).replace(",","").replace("$","").replace(".","").replace("TL","").replace("ED",""));
-
-                if(listPrice < cmpUsedPrice) {
+                // console.log(listPrice[0].innerHTML);
+                // listPrice = listPrice[0].innerHTML;
+                tmpListPrice = formatPriceToNumber(listPrice);
+                // console.log(tmpListPrice);
+                var cmpUsedPrice = formatPriceToNumber(usedPrice);
+                // console.log(cmpUsedPrice);
+                if(tmpListPrice <= cmpUsedPrice) {
                     label = "Best Price";
+                }  else {
+                    // label = "New Only";
                 }
+            } else {
+                label = "New Only";
             }
         } else {
-            label = "New Only";
+                label = "New Only";
         }
         
-
         //compare best used price with current page's price
-        
-        
-
-        
-        // var usedPrice = $('#olp-upd-new-used .a-color-price').html();
         var $imageMarkup = $('<div id="compare-container"> <div id="compare-icon"><button>'+label+'</button></div><div id="compare-region"><div id="temp-compare" class="hidden">Calculating...</div><button class="pending-price-scan">Calculating...</button></div></div>');
         var $container = this.findAppropriateTooltipContainer();
-        // var $container = $('#price').parent();
         $container.append($imageMarkup);
         $container.append(tooltipMarkup);
         tooltip.registerShowHideHandlers();
@@ -724,7 +712,7 @@ var compare = {
             });
             if (!asinHasProbablyChanged)
                 return;
-            var newAsin = $('#ASIN').val(); //nu pot sa fac cache la asin, pentru ca se inlocuieste intregul form, nu elementele individuale, si se pierd referintele
+            var newAsin = $('#ASIN').val();
             if (compare.asin == newAsin)
                 return;
             compare.run(newAsin);
