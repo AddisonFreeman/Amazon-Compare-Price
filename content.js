@@ -352,6 +352,7 @@ var Settings = function (asin) {
                         //show best region if comparing current site
                         if(host === shop.title && compareCurrentPrice < compareMinPrice) {
                             $('#compare-region button')[0].innerText = "Best Region";
+                            $('#compare-region button')[0].dataset.pricelink = "https://"+settings.currentShop.domain+"/gp/aws/cart/add.html?ASIN.1="+compare.asin+"&Quantity.1="+$("#quantity")[0].value;
                         } else {
                             // getBestPriceLink(convertedPrice)
                             //format with dollar sign for these locals
@@ -393,20 +394,15 @@ var Settings = function (asin) {
                         // console.log(bestPrice);
                         $('.completed-price-scan').on('click',(e) => {
                             //best-region button will open the best region page in a new tab if available
-                            if(e.target.tagname === "SPAN") {
-                                if(e.target.parentNode.innerText !== "Best Region") {        
-                                    e.target.parentNode.style['pointer-events'] = "auto";
-                                    window.open($(e.target).parent().data('pricelink'),'_blank');    
-                                } else {
-                                    e.target.parentNode.style['pointer-events'] = "none";
-                                }
+                            // $(".best_save_link")
+                            if($(e.target).data('pricelink') === undefined) {
+                                e.target.parentNode.style['pointer-events'] = "auto";
+                                console.log($(e.target).parent().data('pricelink'));
+                                window.open($(e.target).parent().data('pricelink'));    
                             } else {
-                                if(e.target.innerText !== "Best Region") {        
-                                    e.target.style['pointer-events'] = "auto";
-                                    window.open($(e.target).data('pricelink'),'_blank');
-                                } else {
-                                    e.target.style['pointer-events'] = "none";
-                                }
+                                e.target.style['pointer-events'] = "auto";
+                                console.log($(e.target).data('pricelink'));
+                                window.open($(e.target).data('pricelink'));
                             }
                         });
                     }, 500);
@@ -561,16 +557,22 @@ var page = {
             } else {
                 link = tooltip.findNewUsedPrice()[0].parentNode.href;
             }
-            chrome.runtime.sendMessage({ query: "checkUsedPrice", url: link },
+            
+            chrome.runtime.sendMessage({ query: "checkUsedPrice", url: link+"&f_new=true&f_freeShipping=true" },
                 // parse response
             function (response) {
                 if (response.success) {
                     //parse all used prices and first cheapest new price
-                    var firstNew = $(response.body).find(".olpCondition").filter(function() {
-                        return $(this).text().trim() === "New";
-                    }); 
+                    var firstNew = $(response.body).find(".olpCondition");
+                    // .filter(function() {
+                    //     return $(this).text().trim() === "New";
+                    // }); 
                     // get condition of new price (to support other conditions in the future)
-                    var condition = firstNew[0].innerText.trim();
+                    if(firstNew.length > 0) {
+                        var condition = firstNew[0].innerText.trim();
+                    } else {
+                        var condition = "";
+                    }
                     //set condition in tooltip
                     $(".amz_condition").text(condition);
                     var bestNewPrice = $(firstNew[0]).parent().parent().siblings(".olpPriceColumn").find(".olpOfferPrice");
@@ -578,32 +580,40 @@ var page = {
                     if(isPrime) {
                         $(".best_arrive").html("Includes PRIME Shipping");
                     }
-                    var bestNewPriceFormatted = bestNewPrice[0].innerText.trim();
+                    if(bestNewPrice.length > 0) {
+                        var bestNewPriceFormatted = bestNewPrice[0].innerText.trim();    
+                    } else {
+                        var bestNewPriceFormatted = "";
+                    }
+                    
                     // set price total in popup
                     $(".amz_total").html(listPrice);
                     $(".amz_price").html(listPrice);
-                    $(".best_price").html(bestNewPriceFormatted);
-                    $(".best_total").html(bestNewPriceFormatted);
-                    $("#compare-icon button").html(bestNewPriceFormatted);
-                    // var bestUsedNum = dollarToNumber(usedPrice);
-                    // var usedTotal = bestUsedNum;
-                    // var amzPrice = dollarToNumber(listPrice);
-                    //set price difference in popup
+                    if(bestNewPrice.length > 0) {
+                        $(".best_price").html(bestNewPriceFormatted);
+                        $(".best_total").html(bestNewPriceFormatted);
+                        $("#compare-icon button").html(bestNewPriceFormatted);
+                        console.log(bestNewPriceFormatted);
+                        console.log(listPrice);
+                        if(bestNewPriceFormatted == listPrice) {
+                            $("#compare-icon button").html("Best Price");
+                            $('#compare-icon').off("mouseenter");
+                        } else {
+                            var numberListPrice = formatPriceToNumber(listPrice);
+                            var numberUsedPrice = formatPriceToNumber(bestNewPriceFormatted);
+                            var difference = (Math.round((numberListPrice - numberUsedPrice)) / 100).toFixed(2);
+                            $(".best_save").html("save $"+difference);
+                        }
 
-                    var numberListPrice = formatPriceToNumber(listPrice);
-                    var numberUsedPrice = formatPriceToNumber(bestNewPriceFormatted);
-                    var difference = (Math.round((numberListPrice - numberUsedPrice)) / 100).toFixed(2);
-                    console.log(numberListPrice);
-                    console.log(numberUsedPrice);
-                    console.log(difference);
-                    //set other totals
-                    
-                    // $(".best_price").html(usedPrice);
-                    
-    
-                    // https://www.amazon.com/gp/aws/cart/add.html?ASIN.1=B072HS2CJN&Quantity.1=1
-                    $(".best_save_link").attr("href","https://"+settings.currentShop.domain+"/gp/aws/cart/add.html?ASIN.1="+compare.asin+"&Quantity.1="+$("#quantity")[0].value);
-                    $(".best_save").html("save $"+difference);
+                        // var bestUsedNum = dollarToNumber(usedPrice);
+                        // var usedTotal = bestUsedNum;
+                        // var amzPrice = dollarToNumber(listPrice);
+                        //set price difference in popup                        
+                        // $(".best_price").html(usedPrice);
+                        // https://www.amazon.com/gp/aws/cart/add.html?ASIN.1=B072HS2CJN&Quantity.1=1
+                        // tag=camelproducts-20&linkCode=ogi&th=1&psc=1&language=en_US/ref=olp_f_new?f_new=true
+                    }
+                    $(".best_save_link").attr("href","https://"+settings.currentShop.domain+"/gp/offer-listing/"+compare.asin+"/ref=olp_f_new?f_new=true");
                 } else {
                     if (response.status == 404) {
                         // displayWarning(pageScraper.warning.notFound, true);
@@ -626,9 +636,11 @@ var page = {
                 }
             } else {
                 label = "New Only";
+                $('#compare-icon').off("mouseenter");
             }
         } else {
                 label = "New Only";
+                $('#compare-icon').off("mouseenter");
         }
         
         //compare best used price with current page's price
