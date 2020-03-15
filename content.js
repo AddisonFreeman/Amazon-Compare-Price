@@ -509,6 +509,7 @@ var tooltip = {
             $('#olp-upd-used .a-color-price'),
             $('#olp-upd-new-freeshipping .a-color-price'),
             $('#olp-upd-new-used-freeshipping .a-color-price'),
+            $('#olp-upd-new-used-freeshipping-threshold .a-color-price'),
             $('#olp-new .a-color-price')
         ];
         for (var i = 0; i < $tries.length; i++) {
@@ -533,8 +534,23 @@ var tooltip = {
 };
 
 function formatPriceToNumber(priceString) {
-    return Number(priceString.slice(1,priceString.length).replace(",","").replace("$","").replace(".","").replace("TL","").replace("ED",""));
+    priceString = priceString.replace(",",".").replace("$","").replace("￥","").replace("TL","").replace('AED',"")
+                             .replace("ED","").replace("CDN","").replace("EUR","").replace("€","")
+                             .replace("&nbsp;"," ").replace('USD',"").replace('JPY',"")
+                             .replace('GBP',"").replace('BGN',"").replace('CZK',"").replace('DKK',"")
+                             // .replace('HUF',"").replace('LTL',"").replace('LVL',"").replace('PLN',"").replace('THB',"").replace('ZAR',"")
+                             // .replace('RON',"").replace('SEK',"").replace('CHF',"").replace('NOK',"").replace('PHP',"")
+                             .replace('HRK',"").replace('RUB',"").replace('TRY',"").replace('AUD',"")
+                             .replace('BRL',"").replace('CAD',"").replace('CNY',"").replace('HKD',"")
+                             .replace('IDR',"").replace('ILS',"").replace('INR',"").replace('KRW',"")
+                             .replace('MXN',"").replace('MYR',"").replace('NZD',"")
+                             .replace('SGD',"").trim()
+    return Number(priceString.slice(0,priceString.length));
 }
+
+const decodeHtmlCharCodes = str => 
+  str.replace(/(&#(\d+);)/g, (match, capture, charCode) => 
+    String.fromCharCode(charCode));
 
 var page = {
     addTooltipToPage: function (tooltipMarkup) {
@@ -558,7 +574,7 @@ var page = {
                 link = tooltip.findNewUsedPrice()[0].parentNode.href;
             }
             
-            chrome.runtime.sendMessage({ query: "checkUsedPrice", url: link+"&f_new=true&f_freeShipping=true" },
+            chrome.runtime.sendMessage({ query: "checkUsedPrice", url: link+"&f_new=true" },
                 // parse response
             function (response) {
                 if (response.success) {
@@ -574,14 +590,15 @@ var page = {
                         var condition = "";
                     }
                     //set condition in tooltip
-                    $(".amz_condition").text(condition);
+                    // $(".amz_condition").text(condition);
                     var bestNewPrice = $(firstNew[0]).parent().parent().siblings(".olpPriceColumn").find(".olpOfferPrice");
                     var isPrime = $(bestNewPrice).find(".a-icon-prime").length > 0;
                     if(isPrime) {
                         $(".best_arrive").html("Includes PRIME Shipping");
                     }
                     if(bestNewPrice.length > 0) {
-                        var bestNewPriceFormatted = bestNewPrice[0].innerText.trim();    
+                        console.log(bestNewPrice[0].innerText.trim())
+                        var bestNewPriceFormatted = formatPriceToNumber(bestNewPrice[0].innerText.trim());
                     } else {
                         var bestNewPriceFormatted = "";
                     }
@@ -589,20 +606,25 @@ var page = {
                     // set price total in popup
                     $(".amz_total").html(listPrice);
                     $(".amz_price").html(listPrice);
+                    var currency = settings.currentShop.currency.replace("CAD","CDN$").replace("JPY","￥");
                     if(bestNewPrice.length > 0) {
-                        $(".best_price").html(bestNewPriceFormatted);
-                        $(".best_total").html(bestNewPriceFormatted);
-                        $("#compare-icon button").html(bestNewPriceFormatted);
+                        $(".best_price").html(currency+bestNewPriceFormatted);
+                        $(".best_total").html(currency+bestNewPriceFormatted);
+                        $("#compare-icon button").html(currency+bestNewPriceFormatted);
+                        console.log(listPrice);
+                        listPrice = formatPriceToNumber(decodeHtmlCharCodes(listPrice));
+                        
+                        console.log(settings.currentShop.currency);
+                        
                         console.log(bestNewPriceFormatted);
                         console.log(listPrice);
+
                         if(bestNewPriceFormatted == listPrice) {
                             $("#compare-icon button").html("Best Price");
                             $('#compare-icon').off("mouseenter");
                         } else {
-                            var numberListPrice = formatPriceToNumber(listPrice);
-                            var numberUsedPrice = formatPriceToNumber(bestNewPriceFormatted);
-                            var difference = (Math.round((numberListPrice - numberUsedPrice)) / 100).toFixed(2);
-                            $(".best_save").html("save $"+difference);
+                            var difference = (Math.round((listPrice - bestNewPriceFormatted))).toFixed(2);
+                            $(".best_save").html("save "+currency+difference);
                         }
 
                         // var bestUsedNum = dollarToNumber(usedPrice);
@@ -636,11 +658,9 @@ var page = {
                 }
             } else {
                 label = "New Only";
-                $('#compare-icon').off("mouseenter");
             }
         } else {
                 label = "New Only";
-                $('#compare-icon').off("mouseenter");
         }
         
         //compare best used price with current page's price
@@ -649,6 +669,9 @@ var page = {
         $container.append($imageMarkup);
         $container.append(tooltipMarkup);
         tooltip.registerShowHideHandlers();
+        if(label === "New Only") {
+            $('#compare-icon').off("mouseenter");
+        }
     },
     findAppropriateTooltipContainer: function () {
         var $tries = [

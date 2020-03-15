@@ -39,6 +39,6 @@
    "name": "amazon prices",
    "short_name": "amz price",
    "update_url": "https://clients2.google.com/service/update2/crx",
-   "version": "1.9",
+   "version": "1.12",
    "web_accessible_resources": [ "images/icon.png", "images/loader.gif", "images/placeholder.png", "images/return.png", "css/style.css", "lib/jquery.js", "tooltip.html","flags/*" ]
 }
