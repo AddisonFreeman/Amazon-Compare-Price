@@ -1,5 +1,5 @@
-.best_price {
-  width: 100px;
+.best_price, .amz_price, .best_shipping, .amz_shipping {
+  width: 100%;
 }
 .flag-icon {
   margin-right: 5px;
@@ -90,7 +90,8 @@ h1.heading {
   }
   .heading {
     font-family: Ubuntu, Helvetica, sans-serif;
-    color: #5db75c;
+    /*color: #5db75c;*/
+    color: black;
   }
   .div-block-2 {
     margin-top: 26px;
@@ -98,6 +99,9 @@ h1.heading {
     border-bottom-width: 3px;
     border-bottom-color: #00aaaa;
     color: #00aaaa;
+  }
+  .div-block-2-top {
+      margin-top: 0px;
   }
   .text-block {
     font-family: Ubuntu, Helvetica, sans-serif;

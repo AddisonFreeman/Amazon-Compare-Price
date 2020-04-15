@@ -270,7 +270,7 @@ var Settings = function (asin) {
         new Shop(13, 'amazon.com.tr', 'www.amazon.com.tr', 'https://www.amazon.com.tr/dp/{asin}?', 'TRY', 'tr-TR'),
         new Shop(14, 'amazon.cn', 'www.amazon.cn', 'https://www.amazon.cn/dp/{asin}?', 'CNY', 'ii-CN'),
         new Shop(15, 'amazon.sg', 'www.amazon.sg', 'https://www.amazon.sg/dp/{asin}?', 'SGD', 'en-SG'),
-        new Shop(16, 'amazon.ae', 'www.amazon.ae', 'https://www.amazon.ae/dp/{asin}?', 'AED', 'ar-AE'),
+        new Shop(16, 'amazon.ae', 'www.amazon.ae', 'https://www.amazon.ae/dp/{asin}?', 'AED', 'en-AE'),
     ];
     //set ASIN for each shop
     this.shops.forEach(function (shop) { shop.setAsin(asin); });
@@ -522,7 +522,8 @@ var tooltip = {
     findListedPrice: function () {
         var $tries = [
             $('span#priceblock_saleprice.a-color-price'),
-            $('span#priceblock_ourprice.a-color-price')
+            $('span#priceblock_ourprice.a-color-price'),
+            $("#olp-upd-new-used-freeshipping span.a-color-price")
         ];
         for (var i = 0; i < $tries.length; i++) {
             if ($tries[i].length > 0)
@@ -534,9 +535,12 @@ var tooltip = {
 };
 
 function formatPriceToNumber(priceString) {
-    priceString = priceString.replace(",",".").replace("$","").replace("￥","").replace("TL","").replace('AED',"")
+    if(priceString.includes("FREE")) {
+        return false;
+    }
+    priceString = priceString.replace(",","").replace("&nbsp;"," ").replace("+","").replace("R$","").replace("S$","").replace("$","").replace("￥","").replace("£","").replace("TL","").replace('AED',"")
                              .replace("ED","").replace("CDN","").replace("EUR","").replace("€","")
-                             .replace("&nbsp;"," ").replace('USD',"").replace('JPY',"")
+                             .replace("&nbsp;"," ").replace('USD',"").replace('JPY',"").replace("₺","TRY")
                              .replace('GBP',"").replace('BGN',"").replace('CZK',"").replace('DKK',"")
                              // .replace('HUF',"").replace('LTL',"").replace('LVL',"").replace('PLN',"").replace('THB',"").replace('ZAR',"")
                              // .replace('RON',"").replace('SEK',"").replace('CHF',"").replace('NOK',"").replace('PHP',"")
@@ -545,18 +549,64 @@ function formatPriceToNumber(priceString) {
                              .replace('IDR',"").replace('ILS',"").replace('INR',"").replace('KRW',"")
                              .replace('MXN',"").replace('MYR',"").replace('NZD',"")
                              .replace('SGD',"").trim()
-    return Number(priceString.slice(0,priceString.length));
+    var ret = Number(priceString.slice(0,priceString.length));
+    return (Math.round(ret * 100) / 100);
+}
+
+function formatPriceToNumberEuro(priceString) {
+    if(isFree(priceString)) {
+        return false;
+    }
+    priceString = priceString.replace(".","").replace(",",".").replace("&nbsp;"," ").replace("$","").replace("￥","").replace("£","").replace("TL","").replace('AED',"")
+                             .replace("ED","").replace("CDN","").replace("EUR","").replace("€","")
+                             .replace("&nbsp;"," ").replace('USD',"").replace('JPY',"").replace("₺","TRY")
+                             .replace('GBP',"").replace('BGN',"").replace('CZK',"").replace('DKK',"")
+                             // .replace('HUF',"").replace('LTL',"").replace('LVL',"").replace('PLN',"").replace('THB',"").replace('ZAR',"")
+                             // .replace('RON',"").replace('SEK',"").replace('CHF',"").replace('NOK',"").replace('PHP',"")
+                             .replace('HRK',"").replace('RUB',"").replace('TRY',"").replace('AUD',"")
+                             .replace('BRL',"").replace('CAD',"").replace('CNY',"").replace('HKD',"")
+                             .replace('IDR',"").replace('ILS',"").replace('INR',"").replace('KRW',"")
+                             .replace('MXN',"").replace('MYR',"").replace('NZD',"")
+                             .replace('SGD',"").trim();
+    var ret = Number(priceString.slice(0,priceString.length));
+    return (Math.round(ret * 100) / 100);
 }
 
 const decodeHtmlCharCodes = str => 
   str.replace(/(&#(\d+);)/g, (match, capture, charCode) => 
     String.fromCharCode(charCode));
 
+function convertCurrency(x) {
+    var culture = settings.currentShop.culture;
+    var currency = settings.currentShop.currency;
+    x = (Math.round(x * 100) / 100).toFixed(2);
+    var formatter = new Intl.NumberFormat(culture, {
+      style: 'currency',
+      currency: currency,
+    });
+
+    return formatter.format(x); /* $2,500.00 */
+    // return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
+function isFree(string) {
+    string = string.toLowerCase();
+    return (string.includes("gratuite") || //it
+            string.includes("bedava") || //try
+            string.includes("無料") || //jpy
+            string.includes("gratis") || //es
+            string.includes("kostenfreie") || //de
+            string.includes("自由") || //cn simple
+            string.includes("自由") || //cn trad.
+            string.includes("livre") || //br
+            string.includes("मुक्त") || //hi
+            string.includes("مجانًا")) //ar
+}
+
 var page = {
     addTooltipToPage: function (tooltipMarkup) {
         var $placeholderMarkup = $('<img id="compare-placeholder" src="' + settings.image('placeholder.png') + '" alt="Placeholder" />');
-        // var $placeholderMarkup = $('<div id="compare-placeholder"></div>');
-        // var $imageMarkup = $('<img id="compare-icon" src="' + settings.image('icon.png') + '" alt="Hover to see the prices of the other stores" />');
+        
         var usedPrice = tooltip.findNewUsedPrice();
         var listPrice = tooltip.findListedPrice();
         var label = "";
@@ -565,7 +615,6 @@ var page = {
             usedPrice = usedPrice.html();
             listPrice = listPrice.html();
             label = usedPrice;
-            // console.log(listPrice);
 
             var link = tooltip.findNewUsedPrice()[0].previousElementSibling;
             if(link !== null) {
@@ -573,104 +622,306 @@ var page = {
             } else {
                 link = tooltip.findNewUsedPrice()[0].parentNode.href;
             }
-            
-            chrome.runtime.sendMessage({ query: "checkUsedPrice", url: link+"&f_new=true" },
-                // parse response
-            function (response) {
-                if (response.success) {
-                    //parse all used prices and first cheapest new price
-                    var firstNew = $(response.body).find(".olpCondition");
-                    // .filter(function() {
-                    //     return $(this).text().trim() === "New";
-                    // }); 
-                    // get condition of new price (to support other conditions in the future)
-                    if(firstNew.length > 0) {
-                        var condition = firstNew[0].innerText.trim();
-                    } else {
-                        var condition = "";
-                    }
-                    //set condition in tooltip
-                    // $(".amz_condition").text(condition);
-                    var bestNewPrice = $(firstNew[0]).parent().parent().siblings(".olpPriceColumn").find(".olpOfferPrice");
-                    var isPrime = $(bestNewPrice).find(".a-icon-prime").length > 0;
-                    if(isPrime) {
-                        $(".best_arrive").html("Includes PRIME Shipping");
-                    }
-                    if(bestNewPrice.length > 0) {
-                        console.log(bestNewPrice[0].innerText.trim())
-                        var bestNewPriceFormatted = formatPriceToNumber(bestNewPrice[0].innerText.trim());
-                    } else {
-                        var bestNewPriceFormatted = "";
-                    }
-                    
-                    // set price total in popup
-                    $(".amz_total").html(listPrice);
-                    $(".amz_price").html(listPrice);
-                    var currency = settings.currentShop.currency.replace("CAD","CDN$").replace("JPY","￥");
-                    if(bestNewPrice.length > 0) {
-                        $(".best_price").html(currency+bestNewPriceFormatted);
-                        $(".best_total").html(currency+bestNewPriceFormatted);
-                        $("#compare-icon button").html(currency+bestNewPriceFormatted);
-                        console.log(listPrice);
-                        listPrice = formatPriceToNumber(decodeHtmlCharCodes(listPrice));
-                        
-                        console.log(settings.currentShop.currency);
-                        
-                        console.log(bestNewPriceFormatted);
-                        console.log(listPrice);
-
-                        if(bestNewPriceFormatted == listPrice) {
-                            $("#compare-icon button").html("Best Price");
-                            $('#compare-icon').off("mouseenter");
-                        } else {
-                            var difference = (Math.round((listPrice - bestNewPriceFormatted))).toFixed(2);
-                            $(".best_save").html("save "+currency+difference);
-                        }
-
-                        // var bestUsedNum = dollarToNumber(usedPrice);
-                        // var usedTotal = bestUsedNum;
-                        // var amzPrice = dollarToNumber(listPrice);
-                        //set price difference in popup                        
-                        // $(".best_price").html(usedPrice);
-                        // https://www.amazon.com/gp/aws/cart/add.html?ASIN.1=B072HS2CJN&Quantity.1=1
-                        // tag=camelproducts-20&linkCode=ogi&th=1&psc=1&language=en_US/ref=olp_f_new?f_new=true
-                    }
-                    $(".best_save_link").attr("href","https://"+settings.currentShop.domain+"/gp/offer-listing/"+compare.asin+"/ref=olp_f_new?f_new=true");
-                } else {
-                    if (response.status == 404) {
-                        // displayWarning(pageScraper.warning.notFound, true);
-                    } else {
-                        // displayWarning(pageScraper.warning.networkError, false);
-                    }
-                }
-            });
             if(listPrice !== null) {
-                // console.log(listPrice[0].innerHTML);
-                // listPrice = listPrice[0].innerHTML;
                 tmpListPrice = formatPriceToNumber(listPrice);
-                // console.log(tmpListPrice);
                 var cmpUsedPrice = formatPriceToNumber(usedPrice);
-                // console.log(cmpUsedPrice);
                 if(tmpListPrice <= cmpUsedPrice) {
                     label = "Best Price";
                 }  else {
                     // label = "New Only";
                 }
             } else {
-                label = "New Only";
+                label = "Best Price";
             }
         } else {
-                label = "New Only";
+            label = "Best Price";
         }
+
         
+
+
         //compare best used price with current page's price
         var $imageMarkup = $('<div id="compare-container"> <div id="compare-icon"><button>'+label+'</button></div><div id="compare-region"><div id="temp-compare" class="hidden">Calculating...</div><button class="pending-price-scan">Calculating...</button></div></div>');
         var $container = this.findAppropriateTooltipContainer();
         $container.append($imageMarkup);
         $container.append(tooltipMarkup);
         tooltip.registerShowHideHandlers();
-        if(label === "New Only") {
+        //only support new items
+        if(label === "Best Price") {
             $('#compare-icon').off("mouseenter");
+        } else {
+            chrome.runtime.sendMessage({ query: "checkUsedPrice", url: link+"&f_new=true" },
+            function (response) {
+               var currency = settings.currentShop.currency.replace("CAD","CDN$").replace("JPY","￥").replace("USD","$").replace("EUR","€").replace("TRY","₺").replace("GBP","£").replace("SGD","S$").replace("BRL","R$");
+               if($("#nav-item-signout").length > 0) {
+                    var signedIn = true;
+                } else {
+                    var signedIn = false;
+                }
+
+                if(!signedIn) {
+                    $(".tax_row").hide();
+                    $(".ap_body").css({"height": "100% !important"});
+                }
+
+                if(listPrice.includes("€") || listPrice.includes("₺")) {
+                    listPrice = formatPriceToNumberEuro(decodeHtmlCharCodes(listPrice));
+                } else {
+                    listPrice = formatPriceToNumber(decodeHtmlCharCodes(listPrice));
+                }
+                console.log(listPrice);
+                //find matching entry index in other page
+                var resIdx;    
+                $(response.body).find(".olpOfferPrice").each(function(index, value) {
+                    if(value.innerHTML.includes("EUR")) {
+                        if(formatPriceToNumberEuro(value.innerHTML)==listPrice) {
+                           resIdx = index;
+                        } else {
+                            resIdx = 0;
+                        }
+                    } else {
+                        if(formatPriceToNumber(value.innerHTML)==listPrice) {
+                            resIdx = index;
+                        } else {
+                            resIdx = 0;
+                        }
+                    }   
+                });
+                console.log(resIdx);
+                //condition of matching item
+                var matchCondition = $(response.body).find(".olpCondition")[resIdx].innerText.trim();
+                console.log(matchCondition);
+                //price of matching item
+                var matchPrice = $(response.body).find(".olpOfferPrice")[resIdx].innerText.trim();
+                if(matchPrice.includes("EUR")) {
+                    matchPrice = formatPriceToNumberEuro(decodeHtmlCharCodes(matchPrice));
+                } else {
+                    matchPrice = formatPriceToNumber(decodeHtmlCharCodes(matchPrice));
+                }
+                //listPrice === matchPrice
+                console.log(matchPrice);
+                //tax of matching item
+                var matchTax = $(response.body).find(".olpEstimatedTaxText");
+                //
+                if(matchTax.length > 0) {
+                    var matchTax = matchTax[resIdx].innerText.trim().replace("+ ","").replace("estimated tax","").trim();
+                    $(".amz_tax").html(matchTax);
+                } else {
+                    var matchTax = false;
+                }
+                if(matchTax == false) {
+                    //no tax info, not logged in
+                } else {
+                    console.log(matchTax);    
+                }
+                
+                //shipping of matched item
+                var matchShippingCmp;
+                var matchShipping = $(response.body).find(".olpOffer");
+                if(matchShipping.length > 0) {                
+                    matchShippingPrice = $(matchShipping[resIdx]).find(".olpShippingInfo .a-color-secondary"); // .olpShippingPrice");
+                    //check for free here then look for price as number
+                    console.log(matchShippingPrice[0]);
+                    if(isFree(matchShippingPrice[0].innerText)) {
+                        matchShippingCmp = 0;
+                    } else {
+                        matchShippingPrice = $(matchShipping[resIdx]).find(".olpShippingInfo .a-color-secondary .olpShippingPrice");
+                        if(matchShippingPrice.length > 0) {
+                            matchShipping = matchShippingPrice[0].innerText;
+                            if(matchShipping.includes("EUR")) {
+                                matchShippingCmp = formatPriceToNumberEuro(matchShipping);
+                            } else {
+                                matchShippingCmp = formatPriceToNumber(matchShipping);
+                            }
+                        }
+                        if(typeof matchShipping !== 'string') {
+                            matchShippingInfo = $(matchShipping[resIdx]).find(".olpShippingInfo .a-color-secondary b");
+                            if(matchShippingInfo.length > 0) {
+                                //free shipping
+                                matchShipping = matchShippingInfo[0].innerHTML;
+                                matchShippingCmp = 0;
+                            } else {
+                                var matchPrime = $(matchShipping[resIdx]).find(".a-icon-prime");
+                                if(matchPrime.length > 0) {
+                                    matchShippingCmp = 0;
+                                }    
+                            }
+                        }
+                    }
+                }
+                
+                if(matchShippingCmp != undefined) {
+                    $(".amz_shipping").html(convertCurrency(matchShippingCmp));
+                } else {
+                    // $(".amz_shipping").html((Math.round(matchShipping * 100) / 100).toFixed(2));
+                    $(".amz_shipping").html(convertCurrency(matchShipping));
+                }
+                
+                // if(matchShipping.length > 0) {
+                //     // var currentShipping = currentShipping[resIdx].innerText.trim();
+                //     var matchShippingCmp = formatPriceToNumber(matchShipping);
+                // } else {
+                //     //handle euro
+                //     //olpShippingInfo if free delivery
+                //     var matchShipping = $(".shipping3P").html().replace("& ","").replace("Details","").replace("shipping","").trim();
+                //     matchShippingCmp = formatPriceToNumber(matchShipping);
+                //     // var currentShipping = $("#availability span").html();
+                // }
+                
+                // console.log(matchShipping);
+                //find next best price of matching condition
+
+                // #sellerProfileTriggerId
+                
+                $(response.body).find(".olpCondition").each(function(index, value) {
+                    // console.log(value.innerHTML);
+                    // if(formatPriceToNumberEuro(value.innerHTML)==listPrice) {
+                    //    resIdx = index;
+                    // }
+
+                });
+
+                //verify current product by price
+                // console.log(currentShippingCmp);
+                
+
+                //parse all used prices and first cheapest new price
+                var bestShippingCmp;
+                var bestShipping = $(response.body).find(".olpOffer");
+                // var bestShipping = bestShipping[0].innerText.trim();
+                if(bestShipping.length > 0) {                
+                    bestShippingPrice = $(bestShipping[0]).find(".olpShippingInfo .a-color-secondary");// .olpShippingPrice");
+                    // console.log(bestShippingPrice);
+                    if(isFree(bestShippingPrice[0].innerText)) {
+                        bestShippingCmp = 0;
+                    } else {
+                        bestShippingPrice = $(bestShipping[0]).find(".olpShippingInfo .a-color-secondary .olpShippingPrice");
+                        if(bestShippingPrice.length > 0) {
+                            bestShipping = bestShippingPrice[0].innerText;
+                            if(bestShipping.includes("EUR")) {
+                                bestShippingCmp = formatPriceToNumberEuro(bestShipping);
+                            } else {
+                                bestShippingCmp = formatPriceToNumber(bestShipping);
+                            }
+                        }
+                        if(typeof bestShipping !== 'string' && bestShippingCmp === undefined) {
+                            bestShippingInfo = $(bestShipping[0]).find(".olpShippingInfo .a-color-secondary b");
+                            if(bestShippingInfo.length > 0) {
+                                //free shipping
+                                bestShipping = bestShippingInfo[0].innerHTML;
+                                bestShippingCmp = 0;
+                            } else {
+                                var bestPrime = $(matchShipping[0]).find(".a-icon-prime");
+                                if(bestPrime.length > 0) {
+                                    bestShippingCmp = 0;
+                                }
+                            }
+                        }
+                    }
+                }
+                //  && bestShippingCmp !== 0 //to show free shipping in original language
+                if(bestShippingCmp != undefined) {
+                    $(".best_shipping").html(convertCurrency(bestShippingCmp));
+                } else {
+                    // $(".best_shipping").html((Math.round(bestShipping * 100) / 100).toFixed(2));
+                    $(".best_shipping").html(convertCurrency(bestShipping));
+                }
+
+
+                var bestTax = $(response.body).find(".olpEstimatedTaxText");
+                if(bestTax.length > 0) {
+                    var bestTax = bestTax[0].innerText.trim();
+                    $(".best_tax").html(bestTax.replace("+ ","").replace("estimated tax",""));
+                } else {
+                    var bestTax = "";
+                }
+                // var amzShipping = $("#price-shipping-message");
+                // if(amzShipping.length > 0) {
+                //     console.log(amzShipping[0].innerText.replace("& ","").replace("Details","").replace(".","").trim());
+                //     // $(".amz_shipping").html(amzShipping[0].innerText.replace("& ","").replace("Details","").replace(".","").trim());
+                // } else {
+                //     console.log(amzShipping);
+                // }
+
+
+                var prime = $("#priceBadging_feature_div i").clone();
+                // console.log(prime);
+                if(prime.length > 0) {
+                    $(".amz_shipping").html(prime[0]);
+                }
+
+                //set condition in tooltip
+                var bestNewPrice = $(response.body).find(".olpOfferPrice")[0];
+                bestNewPrice = bestNewPrice.innerText.trim();
+                console.log(bestNewPrice);
+                
+                // var isPrime = $(bestNewPrice).find(".a-icon-prime").length > 0;
+                // if(isPrime) {
+                //     $(".best_arrive").html("Includes PRIME Shipping");
+                // }
+                
+                // console.log(currency);
+                
+                // console.log(bestNewPrice[0].innerText.trim())
+                if(currency === "€" || currency === "₺") {
+                    // listPrice = formatPriceToNumberEuro(decodeHtmlCharCodes(listPrice));
+                    var bestNewPriceFormatted = formatPriceToNumberEuro(bestNewPrice);
+                    bestNewPrice = bestNewPriceFormatted;
+                    bestNewPriceFormatted = bestNewPriceFormatted+bestShippingCmp;
+                    bestTaxCmp = formatPriceToNumberEuro(bestTax);
+                } else {
+                    var bestNewPriceFormatted = formatPriceToNumber(bestNewPrice);
+                    bestNewPrice = bestNewPriceFormatted;
+                    bestNewPriceFormatted = bestNewPriceFormatted+bestShippingCmp;
+                    bestTaxCmp = formatPriceToNumber(bestTax);
+                }
+                
+                // console.log(matchShippingCmp);
+                // console.log(bestShippingCmp);
+                console.log(settings.currentShop.currency);
+                
+                if (bestNewPriceFormatted >= (listPrice + matchShippingCmp)) {
+                    $("#compare-icon button").html("Best Price");
+                    $(".best_save").html("money");
+                    $('#compare-icon').off("mouseenter");
+                } else {
+                    var difference = ((listPrice + matchShippingCmp) - bestNewPriceFormatted);
+                    difference = (Math.round(difference * 100) / 100).toFixed(2);
+                    $(".best_save").html(convertCurrency(difference));
+                    $("#compare-icon button").html(convertCurrency(bestNewPriceFormatted));
+                }
+
+                var amzTotal = listPrice+matchShippingCmp;
+                var bestTotal = bestNewPriceFormatted;
+                
+                // listPrice = (Math.round(listPrice * 100) / 100).toFixed(2);
+                // amzTotal = (Math.round(amzTotal * 100) / 100).toFixed(2);
+                // bestTotal = (Math.round(bestTotal * 100) / 100).toFixed(2);
+                // bestNewPrice = (Math.round(bestNewPrice * 100) / 100).toFixed(2);
+
+                // if(currency === "€" || currency === "₺") {
+                //     //format Euro , .
+                //     listPrice = listPrice.toString().replace(".",",");
+                //     difference = difference.toString().replace(".",",");
+                // } else {
+                //     bestNewPriceFormatted = convertCurrency(bestNewPriceFormatted);
+                // }
+            
+                // if(currency === "€" || currency === "₺") {
+                    //format Euro . ,
+                    // listPrice = listPrice.toString().replace(".",",");
+                    // amzTotal = amzTotal.toString().replace(".",",");
+                    // bestTotal = bestTotal.toString().replace(".",",");
+                    // bestNewPriceFormatted = bestNewPriceFormatted.toString().replace(".",",");
+                // }
+                
+                $(".amz_price").html(convertCurrency(listPrice));
+                $(".amz_total").html(convertCurrency(amzTotal));
+                $(".best_price").html(convertCurrency(bestNewPrice));
+                $(".best_total").html(convertCurrency(bestTotal));
+                
+                $(".best_save_link").attr("href","https://"+settings.currentShop.domain+"/gp/offer-listing/"+compare.asin+"/ref=olp_f_new?f_new=true");
+            });
         }
     },
     findAppropriateTooltipContainer: function () {
