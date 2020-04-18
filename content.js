@@ -494,13 +494,13 @@ var tooltip = {
             $('.compare-tooltip').hide();
             isOn(true);
         })
-        .mouseleave(function () {
-            isOn(false);
-            setTimeout(function () {
-                if (!tooltip._mouseIsOnIcon && !tooltip._mouseIsOnTooltip)
-                    $('.price-tooltip').hide();
-            }, 100);
-        });
+        // .mouseleave(function () {
+        //     isOn(false);
+        //     setTimeout(function () {
+        //         if (!tooltip._mouseIsOnIcon && !tooltip._mouseIsOnTooltip)
+        //             $('.price-tooltip').hide();
+        //     }, 100);
+        // });
     },    
     findNewUsedPrice: function () {
         var $tries = [
@@ -636,7 +636,17 @@ var page = {
         } else {
             label = "Best Price";
         }
+        
+        var signedin = document.querySelector("#nav-item-signout");
+        if(signedin !== null) {
+            console.log('signed in');
+            $(".price-tooltip .cmp_body").addClass("signedin");
+            $(".tax_row").show();
+        } else {
+            console.log('not signed in');
+        }
 
+        
         
 
 
@@ -653,15 +663,14 @@ var page = {
             chrome.runtime.sendMessage({ query: "checkUsedPrice", url: link+"&f_new=true" },
             function (response) {
                var currency = settings.currentShop.currency.replace("CAD","CDN$").replace("JPY","￥").replace("USD","$").replace("EUR","€").replace("TRY","₺").replace("GBP","£").replace("SGD","S$").replace("BRL","R$");
-               if($("#nav-item-signout").length > 0) {
-                    var signedIn = true;
+               
+                var signedin = document.querySelector("#nav-item-signout");
+                if(signedin !== null) {
+                    console.log('signed in');
+                    $(".price-tooltip .cmp_body").addClass("signedin");
+                    $(".tax_row").show();
                 } else {
-                    var signedIn = false;
-                }
-
-                if(!signedIn) {
-                    $(".tax_row").hide();
-                    $(".ap_body").css({"height": "100% !important"});
+                    console.log('not signed in');
                 }
 
                 if(listPrice.includes("€") || listPrice.includes("₺")) {
@@ -674,19 +683,20 @@ var page = {
                 var resIdx;    
                 $(response.body).find(".olpOfferPrice").each(function(index, value) {
                     if(value.innerHTML.includes("EUR")) {
-                        if(formatPriceToNumberEuro(value.innerHTML)==listPrice) {
+                        var cmpEU = formatPriceToNumberEuro(value.innerHTML);
+                        if(cmpEU==listPrice) {
                            resIdx = index;
-                        } else {
-                            resIdx = 0;
                         }
                     } else {
-                        if(formatPriceToNumber(value.innerHTML)==listPrice) {
+                        var cmp = formatPriceToNumber(value.innerHTML);
+                        if(cmp==listPrice) {
                             resIdx = index;
-                        } else {
-                            resIdx = 0;
                         }
                     }   
                 });
+                if(resIdx == undefined) {
+                    resIdx = 0;
+                }
                 console.log(resIdx);
                 //condition of matching item
                 var matchCondition = $(response.body).find(".olpCondition")[resIdx].innerText.trim();
@@ -700,21 +710,22 @@ var page = {
                 }
                 //listPrice === matchPrice
                 console.log(matchPrice);
+// --------------------------------------
                 //tax of matching item
-                var matchTax = $(response.body).find(".olpEstimatedTaxText");
-                //
-                if(matchTax.length > 0) {
-                    var matchTax = matchTax[resIdx].innerText.trim().replace("+ ","").replace("estimated tax","").trim();
-                    $(".amz_tax").html(matchTax);
-                } else {
-                    var matchTax = false;
-                }
-                if(matchTax == false) {
-                    //no tax info, not logged in
-                } else {
-                    console.log(matchTax);    
-                }
-                
+                // setTimeout(() => {
+                    var matchTax = $(response.body).find(".olpOffer");
+                    matchTax = $(matchTax[resIdx]).find(".olpEstimatedTaxText");
+                    if(matchTax.length > 0) {
+                        console.log(matchTax);
+                        var matchTax = matchTax[0].innerText.trim().replace("+ ","").replace("estimated tax","").trim();
+                        $(".amz_tax").html(matchTax);
+                    } else {
+                        var matchTax = "0";
+                        $(".tax_row").hide();
+                        $(".price-tooltip .cmp_body").removeClass("signedin");
+                    }
+                // }, 2100);
+// --------------------------------------
                 //shipping of matched item
                 var matchShippingCmp;
                 var matchShipping = $(response.body).find(".olpOffer");
@@ -757,22 +768,6 @@ var page = {
                     $(".amz_shipping").html(convertCurrency(matchShipping));
                 }
                 
-                // if(matchShipping.length > 0) {
-                //     // var currentShipping = currentShipping[resIdx].innerText.trim();
-                //     var matchShippingCmp = formatPriceToNumber(matchShipping);
-                // } else {
-                //     //handle euro
-                //     //olpShippingInfo if free delivery
-                //     var matchShipping = $(".shipping3P").html().replace("& ","").replace("Details","").replace("shipping","").trim();
-                //     matchShippingCmp = formatPriceToNumber(matchShipping);
-                //     // var currentShipping = $("#availability span").html();
-                // }
-                
-                // console.log(matchShipping);
-                //find next best price of matching condition
-
-                // #sellerProfileTriggerId
-                
                 $(response.body).find(".olpCondition").each(function(index, value) {
                     // console.log(value.innerHTML);
                     // if(formatPriceToNumberEuro(value.innerHTML)==listPrice) {
@@ -780,10 +775,6 @@ var page = {
                     // }
 
                 });
-
-                //verify current product by price
-                // console.log(currentShippingCmp);
-                
 
                 //parse all used prices and first cheapest new price
                 var bestShippingCmp;
@@ -828,13 +819,29 @@ var page = {
                 }
 
 
-                var bestTax = $(response.body).find(".olpEstimatedTaxText");
-                if(bestTax.length > 0) {
-                    var bestTax = bestTax[0].innerText.trim();
-                    $(".best_tax").html(bestTax.replace("+ ","").replace("estimated tax",""));
-                } else {
-                    var bestTax = "";
-                }
+// --------------------------------------
+                // var bestTax = $(response.body).find(".olpOffer");
+                // bestTax = $(bestTax[0]).find(".olpEstimatedTaxText");
+
+                // if(bestTax.length > 0) {
+                //     var bestTax = bestTax.innerText.trim();
+                //     $(".best_tax").html(bestTax.replace("+ ","").replace("estimated tax",""));
+                // } else {
+                //     var bestTax = "";
+                // }
+                // setTimeout(() => {
+                    var bestTax = $(response.body).find(".olpOffer");
+                    bestTax = $(bestTax[0]).find(".olpEstimatedTaxText");
+                    if(bestTax.length > 0) {
+                        var bestTax = bestTax[0].innerText.trim().replace("+ ","").replace("estimated tax","").trim();
+                        $(".best_tax").html(bestTax);
+                    } else {
+                        var bestTax = "0";
+                        $(".tax_row").hide();
+                        $(".price-tooltip .cmp_body").removeClass("signedin");
+                    }
+                // }, 2100);
+// --------------------------------------
                 // var amzShipping = $("#price-shipping-message");
                 // if(amzShipping.length > 0) {
                 //     console.log(amzShipping[0].innerText.replace("& ","").replace("Details","").replace(".","").trim());
@@ -859,62 +866,37 @@ var page = {
                 // if(isPrime) {
                 //     $(".best_arrive").html("Includes PRIME Shipping");
                 // }
-                
-                // console.log(currency);
-                
-                // console.log(bestNewPrice[0].innerText.trim())
+
                 if(currency === "€" || currency === "₺") {
                     // listPrice = formatPriceToNumberEuro(decodeHtmlCharCodes(listPrice));
                     var bestNewPriceFormatted = formatPriceToNumberEuro(bestNewPrice);
                     bestNewPrice = bestNewPriceFormatted;
                     bestNewPriceFormatted = bestNewPriceFormatted+bestShippingCmp;
                     bestTaxCmp = formatPriceToNumberEuro(bestTax);
+                    matchTaxCmp = formatPriceToNumberEuro(matchTax);
                 } else {
                     var bestNewPriceFormatted = formatPriceToNumber(bestNewPrice);
                     bestNewPrice = bestNewPriceFormatted;
                     bestNewPriceFormatted = bestNewPriceFormatted+bestShippingCmp;
                     bestTaxCmp = formatPriceToNumber(bestTax);
+                    matchTaxCmp = formatPriceToNumber(matchTax);
                 }
                 
-                // console.log(matchShippingCmp);
-                // console.log(bestShippingCmp);
                 console.log(settings.currentShop.currency);
                 
-                if (bestNewPriceFormatted >= (listPrice + matchShippingCmp)) {
+                var amzTotal = listPrice+matchShippingCmp+matchTaxCmp;
+                var bestTotal = (bestNewPriceFormatted+bestShippingCmp+bestTaxCmp);
+
+                if (bestTotal >= amzTotal) {
                     $("#compare-icon button").html("Best Price");
                     $(".best_save").html("money");
                     $('#compare-icon').off("mouseenter");
                 } else {
-                    var difference = ((listPrice + matchShippingCmp) - bestNewPriceFormatted);
-                    difference = (Math.round(difference * 100) / 100).toFixed(2);
+                    var difference = (amzTotal - bestTotal);
                     $(".best_save").html(convertCurrency(difference));
                     $("#compare-icon button").html(convertCurrency(bestNewPriceFormatted));
                 }
 
-                var amzTotal = listPrice+matchShippingCmp;
-                var bestTotal = bestNewPriceFormatted;
-                
-                // listPrice = (Math.round(listPrice * 100) / 100).toFixed(2);
-                // amzTotal = (Math.round(amzTotal * 100) / 100).toFixed(2);
-                // bestTotal = (Math.round(bestTotal * 100) / 100).toFixed(2);
-                // bestNewPrice = (Math.round(bestNewPrice * 100) / 100).toFixed(2);
-
-                // if(currency === "€" || currency === "₺") {
-                //     //format Euro , .
-                //     listPrice = listPrice.toString().replace(".",",");
-                //     difference = difference.toString().replace(".",",");
-                // } else {
-                //     bestNewPriceFormatted = convertCurrency(bestNewPriceFormatted);
-                // }
-            
-                // if(currency === "€" || currency === "₺") {
-                    //format Euro . ,
-                    // listPrice = listPrice.toString().replace(".",",");
-                    // amzTotal = amzTotal.toString().replace(".",",");
-                    // bestTotal = bestTotal.toString().replace(".",",");
-                    // bestNewPriceFormatted = bestNewPriceFormatted.toString().replace(".",",");
-                // }
-                
                 $(".amz_price").html(convertCurrency(listPrice));
                 $(".amz_total").html(convertCurrency(amzTotal));
                 $(".best_price").html(convertCurrency(bestNewPrice));

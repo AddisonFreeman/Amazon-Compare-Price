@@ -39,6 +39,6 @@
    "name": "Cross Compare Prices",
    "short_name": "Cross",
    "update_url": "https://clients2.google.com/service/update2/crx",
-   "version": "1.20.1",
+   "version": "1.21",
    "web_accessible_resources": [ "images/icon.png", "images/loader.gif", "images/placeholder.png", "images/return.png", "css/style.css", "lib/jquery.js", "tooltip.html","flags/*" ]
 }
