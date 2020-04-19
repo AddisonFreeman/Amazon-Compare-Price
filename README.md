@@ -6,7 +6,7 @@ Cross Compare is a Google Chrome Extension that scrapes different amazon regions
 
 You do not need to have an amazon account to use the extension. Simply load an amazon product page in any world region to view price comparisons. The default price currency option will match the first amazon locale loaded.
 
-When available, additional tax information will be display when logged into your amazon account.
+When available, additional tax information will be displayed when logged into your amazon account.
 
 ### Installing
 
@@ -19,6 +19,10 @@ You must enable the extension in your browser by entering `chrome://extensions` 
 ### Region Comparison Button
 
 ![Region Comparison](/docs/demo1-3x.gif)
+
+The right side button is used to see the prices of the current page's product. If the product is not in stock in another region it will display as unavailable. If the product is not sold in another region it will be listed as not found with a strikethrough style for easy identification.
+
+You may view this comparison in different currencies by selecting a currency in the dropdown menu at the bottom of this popup. This will trigger a page refresh with a new price comparison in your selected currency. Clicking on the url of a new locale
 
 ### Other Sellers Button
 
