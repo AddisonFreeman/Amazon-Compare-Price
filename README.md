@@ -32,6 +32,8 @@ Note: to quickly redirect to the best region produt page simply click on the rig
 
 Hovering over this button will show the best priced other seller price on the right side and the current page's price on the left. Shipping info is also displayed as well as estimated tax when logged in and available. The total will be listed with the price difference shown in the button at the bottom. Click on this button to be redirected to a page with all other sellers listed. The topmost listing is the best new price for this item. Click on 'Add To Cart' to proceed with checkout of this item.
 
+Note: if there are no other sellers with a better price for this product the button will display 'Best Price' and the popup will not appear.
+
 ## Authors
 
 More information can be found at trycross.com
