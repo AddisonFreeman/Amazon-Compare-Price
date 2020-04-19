@@ -494,13 +494,13 @@ var tooltip = {
             $('.compare-tooltip').hide();
             isOn(true);
         })
-        // .mouseleave(function () {
-        //     isOn(false);
-        //     setTimeout(function () {
-        //         if (!tooltip._mouseIsOnIcon && !tooltip._mouseIsOnTooltip)
-        //             $('.price-tooltip').hide();
-        //     }, 100);
-        // });
+        .mouseleave(function () {
+            isOn(false);
+            setTimeout(function () {
+                if (!tooltip._mouseIsOnIcon && !tooltip._mouseIsOnTooltip)
+                    $('.price-tooltip').hide();
+            }, 100);
+        });
     },    
     findNewUsedPrice: function () {
         var $tries = [
