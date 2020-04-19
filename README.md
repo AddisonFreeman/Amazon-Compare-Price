@@ -12,17 +12,17 @@ When available, additional tax information will be display when logged into your
 
 You must enable the extension in your browser by entering `chrome://extensions` in the omnibar. Ensure the extension is enabled by clicking the extension item toggle.
 
-![Extensions Page](https://github.com/AddisonFreeman/Amazon-Compare-Price/raw/master/docs/extensions%20page.png)
+![Extensions Page](/docs/extensions%20page.png)
 
 ## Usage
 
 ### Region Comparison Button
 
-![Region Comparison](https://github.com/AddisonFreeman/Amazon-Compare-Price/raw/master/docs/demo1-3x.gif)
+![Region Comparison](/docs/demo1-3x.gif)
 
 ### Other Sellers Button
 
-![Other Sellers](https://github.com/AddisonFreeman/Amazon-Compare-Price/raw/master/docs/demo2-2x.gif)
+![Other Sellers](/docs/demo2-2x.gif)
 
 ## Authors
 This product is owned by Eric Kim.
